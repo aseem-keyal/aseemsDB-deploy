@@ -125,6 +125,30 @@ services:
           - node.role == manager
       restart_policy:
         condition: on-failure
+  nginx:
+    image: nginx:alpine
+    depends_on:
+      - aseemsdb
+    volumes:
+      - ../nginxconf/default.conf:/etc/nginx/conf.d/default.conf
+      - ../packet_archive/:/static/packet_archive/
+    networks:
+      - inbound
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=inbound
+        - traefik.constraint-label=traefik-public
+        - >-
+          traefik.http.routers.nginx-http.rule=PathPrefix(`/static/packet_archive/`)
+        - traefik.http.routers.nginx-http.entrypoints=http
+        - traefik.http.routers.nginx-http.middlewares=https-redirect
+        - >-
+          traefik.http.routers.nginx-https.rule=PathPrefix(`/static/packet_archive/`)
+        - traefik.http.routers.nginx-https.entrypoints=https
+        - traefik.http.routers.nginx-https.tls=true
+        - traefik.http.routers.nginx-https.tls.certresolver=le
+        - traefik.http.services.nginx.loadbalancer.server.port=80
   aseemsdb:
     image: 'akeyal/aseemsdb:latest'
     volumes:
