@@ -1,0 +1,176 @@
+version: '3.8'
+services:
+  traefik:
+    image: 'traefik:v2.2'
+    ports:
+      - target: 80
+        published: 80
+        mode: host
+      - target: 443
+        published: 443
+        mode: host
+      - target: 8082
+        published: 8082
+        mode: host
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: ingress 
+    deploy:
+      placement:
+        constraints:
+          - node.labels.traefik-public.traefik-public-certificates == true
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+        - traefik.constraint-label=traefik-public
+        - >-
+          traefik.http.middlewares.admin-auth.basicauth.users=${USERNAME?Variable
+          not set}:${HASHED_PASSWORD?Variable not set}
+        - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
+        - traefik.http.middlewares.https-redirect.redirectscheme.permanent=true
+        - >-
+          traefik.http.routers.traefik-public-http.rule=Host(`${DOMAIN?Variable
+          not set}`)
+        - traefik.http.routers.traefik-public-http.entrypoints=http
+        - traefik.http.routers.traefik-public-http.middlewares=https-redirect
+        - >-
+          traefik.http.routers.traefik-public-https.rule=Host(`${DOMAIN?Variable
+          not set}`)
+        - traefik.http.routers.traefik-public-https.entrypoints=https
+        - traefik.http.routers.traefik-public-https.tls=true
+        - traefik.http.routers.traefik-public-https.service=api@internal
+        - traefik.http.routers.traefik-public-https.tls.certresolver=le
+        - traefik.http.routers.traefik-public-https.middlewares=admin-auth
+        - traefik.http.services.traefik-public.loadbalancer.server.port=8080
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock:ro'
+      - 'traefik-public-certificates:/certificates'
+    command:
+      - '--providers.docker'
+      - >-
+        --providers.docker.constraints=Label(`traefik.constraint-label`,
+        `traefik-public`)
+      - '--providers.docker.exposedbydefault=false'
+      - '--providers.docker.swarmmode'
+      - '--entrypoints.http.address=:80'
+      - '--entrypoints.https.address=:443'
+      - '--entrypoints.prometheus.address=:8082'
+      - '--certificatesresolvers.le.acme.email=${EMAIL?Variable not set}'
+      - '--certificatesresolvers.le.acme.storage=/certificates/acme.json'
+      - '--certificatesresolvers.le.acme.tlschallenge=true'
+      - '--accesslog'
+      - '--log.level=DEBUG'
+      - '--metrics.prometheus=true'
+      - "--metrics.prometheus.buckets=0.1,0.3,1.2,5.0"
+      - '--api.insecure=true'
+    networks:
+      - traefik-public
+      - inbound
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - inbound
+    deploy:
+      labels:
+       - "traefik.enable=true"
+       - "traefik.constraint-label=traefik-public"
+       - "traefik.http.routers.prometheus-http.rule=Host(`prometheus.testing.aseemsdb.me`)"
+       - "traefik.http.routers.prometheus-http.service=prometheus"
+       - "traefik.http.routers.prometheus-http.entrypoints=prometheus"
+       - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+       - "traefik.docker.network=inbound"
+      placement:
+        constraints:
+        - node.role==manager
+      restart_policy:
+        condition: on-failure
+  
+  grafana:
+    image: grafana/grafana
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    env_file:
+      - ./grafana/config.monitoring
+    networks:
+      - inbound
+    user: "104"
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.constraint-label=traefik-public
+        - "traefik.http.routers.grafana-http.rule=Host(`grafana.testing.aseemsdb.me`)"
+        - "traefik.http.routers.grafana-http.service=grafana"
+        - traefik.http.routers.grafana-http.entrypoints=http
+        - traefik.http.routers.grafana-http.middlewares=https-redirect
+        - "traefik.http.routers.grafana-https.rule=Host(`grafana.testing.aseemsdb.me`)"
+        - traefik.http.routers.grafana-https.entrypoints=https
+        - traefik.http.routers.grafana-https.tls=true
+        - traefik.http.routers.grafana-https.tls.certresolver=le
+        - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+        - "traefik.docker.network=inbound"
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+  aseemsdb:
+    image: 'akeyal/aseemsdb:latest'
+    volumes:
+      - '../packet_archive:/app/static/packet_archive'
+      - '../recollconf:/root/.recoll'
+    networks:
+      - inbound
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=inbound
+        - traefik.constraint-label=traefik-public
+        - >-
+          traefik.http.routers.aseemsdb-http.rule=Host(`${ASEEMSDB_DOMAIN?Variable
+          not set}`)
+        - traefik.http.routers.aseemsdb-http.entrypoints=http
+        - traefik.http.routers.aseemsdb-http.middlewares=https-redirect
+        - >-
+          traefik.http.routers.aseemsdb-https.rule=Host(`${ASEEMSDB_DOMAIN?Variable
+          not set}`)
+        - traefik.http.routers.aseemsdb-https.entrypoints=https
+        - traefik.http.routers.aseemsdb-https.tls=true
+        - traefik.http.routers.aseemsdb-https.tls.certresolver=le
+        - traefik.http.services.aseemsdb.loadbalancer.server.port=80
+      update_config:
+        order: start-first
+        failure_action: rollback
+        delay: 10s
+      rollback_config:
+        parallelism: 0
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    healthcheck:
+      test: ["CMD", "pgrep", "gunicorn"]
+
+volumes:
+  traefik-public-certificates: null
+  prometheus_data: {}
+  grafana_data: {}
+networks:
+  traefik-public:
+    external: true
+  inbound:
+    external: true
+
