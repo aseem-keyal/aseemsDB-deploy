@@ -1,0 +1,12 @@
+version: "3.9"
+services:
+  aseemsdb:
+    image: "akeyal/aseemsdb:latest"
+    container_name: "aseemsdb"
+    command: /start-reload.sh
+    ports:
+      - "8080:80"
+    volumes:
+      - "/Users/aseem.keyal/Documents/aseemsDB/aseemsDB-fastapi-rewrite/app:/app"
+      - "/Users/aseem.keyal/Documents/aseemsDB/packet_archive:/app/static/packet_archive"
+      - "/Users/aseem.keyal/Documents/aseemsDB/recollconf:/root/.recoll"
