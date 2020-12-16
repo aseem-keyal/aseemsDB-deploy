@@ -16,7 +16,7 @@
   "editable": true,
   "gnetId": 4475,
   "graphTooltip": 0,
-  "iteration": 1607986847074,
+  "iteration": 1608097160537,
   "links": [],
   "panels": [
     {
@@ -179,7 +179,7 @@
       "pluginVersion": "7.3.5",
       "targets": [
         {
-          "expr": "traefik_service_request_duration_seconds_bucket{service=\"$service\", code=\"200\"}",
+          "expr": "sum(traefik_service_request_duration_seconds_bucket{service=\"$service\", code=\"200\"}) by (le)",
           "format": "heatmap",
           "instant": true,
           "interval": "",
@@ -784,5 +784,5 @@
   "timezone": "",
   "title": "Traefik2",
   "uid": "qPdAviJmz1",
-  "version": 1
+  "version": 2
 }
