@@ -130,7 +130,7 @@ services:
     depends_on:
       - aseemsdb
     volumes:
-      - ../nginxconf/default.conf:/etc/nginx/conf.d/default.conf
+      - ./default.conf:/etc/nginx/conf.d/default.conf
       - ../packet_archive/:/static/packet_archive/
     networks:
       - inbound
