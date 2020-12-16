@@ -193,8 +193,8 @@ services:
       - '../packet_archive:/data/packet_archive:ro'
       - '../recollconf:/data/recollconf:ro'
     environment:
-      - ACCESS_KEY
-      - SECRET_KEY
+      - ACCESS_KEY=${ACCESS_KEY?Variable not set}
+      - SECRET_KEY=${SECRET_KEY?Variable not set}
       - S3_PATH
       - CRON_SCHEDULE
 
