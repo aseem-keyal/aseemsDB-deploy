@@ -10,7 +10,8 @@
 4. Run `docker-compose -f dev.yml up`
 5. Run `docker exec -it aseemsdb recollindex` in order to run the initial recoll index operation. Once this completes, you can CTRL+D or `exit` out of the container
 6. Open `localhost:8080` in your browser and the app folder inside your cloned aseemsDB repo in your text editor/IDE of choice
-7. Edits to the aseemsDB source code should auto-reload the uvicorn server and be reflected
+
+Edits to the aseemsDB source code should auto-reload the uvicorn server and be reflected in the running app.
 
 ## Steps to run aseemsDB in production (with nginx serving static files, metrics, and S3 backups)
 1. Clone this repo on your server
@@ -22,3 +23,5 @@
 7. Set the `ACCESS_KEY` and `SECRET_KEY` environment variables for your S3 bucket (if you don't want to backup to S3 you can remove the backup service from `docker-compose.yml`)
 8. Run `docker stack deploy -c docker-compose.yml aseemsdb` to create all the services
 9. Give the services a minute or two to start up and then you should be able to go to your domain and see the aseemsDB UI
+
+You now have a deployed instance of aseemsDB with metrics, logging, and automated backups that can be scaled by adding more docker swarm nodes to your cluster.
