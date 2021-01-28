@@ -168,7 +168,7 @@ services:
         - traefik.http.routers.nginx-https.tls.certresolver=le
         - traefik.http.services.nginx.loadbalancer.server.port=80
   aseemsdb:
-    image: 'akeyal/aseemsdb:latest'
+    image: 'akeyal/aseemsdb:testing'
     volumes:
       - '../packet_archive:/app/static/packet_archive'
       - '../recollconf:/root/.recoll'
