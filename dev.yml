@@ -7,6 +7,6 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - "/Users/aseem.keyal/Documents/aseemsDB/aseemsDB-fastapi-rewrite/app:/app"
+      - "/Users/aseem.keyal/Documents/aseemsDB/aseemsDB/app:/app"
       - "/Users/aseem.keyal/Documents/aseemsDB/packet_archive:/app/static/packet_archive"
       - "/Users/aseem.keyal/Documents/aseemsDB/recollconf:/root/.recoll"
