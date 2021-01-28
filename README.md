@@ -21,7 +21,8 @@ Edits to the aseemsDB source code should auto-reload the uvicorn server and be r
 5. Edit the `prod.sh` file and then run `source prod.sh` to set the relevant environment variables
 6. Edit the prometheus data source in `grafana/provisioning/datasources/datasource.yml` to point to the prometheus endpoint you're exposing (`prometheus.yourdomain:8082`)
 7. Set the `ACCESS_KEY` and `SECRET_KEY` environment variables for your S3 bucket (if you don't want to backup to S3 you can remove the backup service from `docker-compose.yml`)
-8. Run `docker stack deploy -c docker-compose.yml aseemsdb` to create all the services
-9. Give the services a minute or two to start up and then you should be able to go to your domain and see the aseemsDB UI
+8. Run `docker network create --driver=overlay inbound` to create another docker network
+9. Run `docker stack deploy -c docker-compose.yml aseemsdb` to create all the services
+10. Give the services a minute or two to start up and then you should be able to go to your domain and see the aseemsDB UI
 
 You now have a deployed instance of aseemsDB with metrics, logging, and automated backups that can be scaled by adding more docker swarm nodes to your cluster.
